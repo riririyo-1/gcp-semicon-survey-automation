@@ -1,0 +1,150 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: gcp-semicon-survey-automation
+  REGION: asia-northeast1
+  ARTIFACT_REGISTRY: asia-northeast1-docker.pkg.dev/gcp-semicon-survey-automation/containers
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      # -- リポジトリのチェックアウト --------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # -- Google Cloud認証（Workload Identity） --------------
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      # -- Cloud SDKセットアップ --------------
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # -- Docker認証 --------------
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+
+      # -- RSS Collectorのビルドとプッシュ --------------
+      - name: Build and push RSS Collector
+        run: |
+          cd jobs/rss-collector
+          docker build -t ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
+                       -t ${{ env.ARTIFACT_REGISTRY }}/rss-collector:latest \
+                       -f Dockerfile ..
+          docker push ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }}
+          docker push ${{ env.ARTIFACT_REGISTRY }}/rss-collector:latest
+
+      # -- Metadata Generatorのビルドとプッシュ --------------
+      - name: Build and push Metadata Generator
+        run: |
+          cd jobs/metadata-generator
+          docker build -t ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }} \
+                       -t ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:latest .
+          docker push ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }}
+          docker push ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:latest
+
+      # -- Frontendのビルドとプッシュ --------------
+      - name: Build and push Frontend
+        run: |
+          cd frontend
+          docker build -t ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }} \
+                       -t ${{ env.ARTIFACT_REGISTRY }}/frontend:latest .
+          docker push ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }}
+          docker push ${{ env.ARTIFACT_REGISTRY }}/frontend:latest
+
+      # -- RSS Collector Cloud Run Jobデプロイ --------------
+      - name: Deploy RSS Collector Job
+        run: |
+          gcloud run jobs update rss-collector \
+            --image ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-secrets DB_PASSWORD=db-password:latest \
+            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
+            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
+            --set-env-vars DB_NAME=semicon_survey \
+            --set-env-vars DB_USER=postgres \
+            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
+            --max-retries 3 \
+            --task-timeout 1800s \
+            || gcloud run jobs create rss-collector \
+            --image ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-secrets DB_PASSWORD=db-password:latest \
+            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
+            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
+            --set-env-vars DB_NAME=semicon_survey \
+            --set-env-vars DB_USER=postgres \
+            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
+            --max-retries 3 \
+            --task-timeout 1800s
+
+      # -- Metadata Generator Cloud Run Jobデプロイ --------------
+      - name: Deploy Metadata Generator Job
+        run: |
+          gcloud run jobs update metadata-generator \
+            --image ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-secrets DB_PASSWORD=db-password:latest \
+            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
+            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
+            --set-env-vars DB_NAME=semicon_survey \
+            --set-env-vars DB_USER=postgres \
+            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
+            --max-retries 3 \
+            --task-timeout 3600s \
+            || gcloud run jobs create metadata-generator \
+            --image ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-secrets DB_PASSWORD=db-password:latest \
+            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
+            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
+            --set-env-vars DB_NAME=semicon_survey \
+            --set-env-vars DB_USER=postgres \
+            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
+            --max-retries 3 \
+            --task-timeout 3600s
+
+      # -- Frontend Cloud Run Serviceデプロイ --------------
+      - name: Deploy Frontend Service
+        run: |
+          gcloud run deploy frontend \
+            --image ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-secrets DB_PASSWORD=db-password:latest \
+            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
+            --set-env-vars DB_NAME=semicon_survey \
+            --set-env-vars DB_USER=postgres \
+            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
+            --allow-unauthenticated \
+            --port 3000 \
+            --cpu 1 \
+            --memory 512Mi \
+            --min-instances 0 \
+            --max-instances 10
+
+      # -- デプロイ完了通知 --------------
+      - name: Deployment complete
+        run: |
+          echo "Deployment completed successfully!"
+          echo "RSS Collector: ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }}"
+          echo "Metadata Generator: ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }}"
+          echo "Frontend: ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }}"

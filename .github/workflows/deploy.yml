@@ -43,8 +43,7 @@ jobs:
         run: |
           cd jobs/rss-collector
           docker build -t ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
-                       -t ${{ env.ARTIFACT_REGISTRY }}/rss-collector:latest \
-                       -f Dockerfile ..
+                       -t ${{ env.ARTIFACT_REGISTRY }}/rss-collector:latest .
           docker push ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/rss-collector:latest
 

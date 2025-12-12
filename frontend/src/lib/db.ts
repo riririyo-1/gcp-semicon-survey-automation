@@ -7,18 +7,13 @@ let secretClient: SecretManagerServiceClient | null = null;
 
 // -- Secret Manager からパスワード取得 --------------
 async function getDbPassword(): Promise<string> {
-  // ローカル開発環境では環境変数から取得
-  if (process.env.NODE_ENV !== "production") {
-    const password = process.env.DB_PASSWORD;
-    if (password) {
-      return password;
-    }
-  }
-  // 本番環境では Secret Manager から取得
+  // Secret Manager Client を初期化
+  if (!secretClient) {
     secretClient = new SecretManagerServiceClient();
   }
 
-  const projectId = process.env.GCP_PROJECT_ID || "gcp-semicon-survey-automation";
+  // Cloud Run環境では自動的にプロジェクトが認識される
+  const projectId = "gcp-semicon-survey-automation";
   const secretName = `projects/${projectId}/secrets/db-password/versions/latest`;
 
   try {

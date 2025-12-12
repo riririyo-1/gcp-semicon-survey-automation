@@ -12,34 +12,56 @@ env:
   ARTIFACT_REGISTRY: asia-northeast1-docker.pkg.dev/gcp-semicon-survey-automation/containers
 
 jobs:
-  deploy:
+  # -- 認証・セットアップ --------------
+  setup:
+    name: Setup GCP Authentication
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
 
     steps:
-      # -- リポジトリのチェックアウト --------------
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # -- Google Cloud認証（Workload Identity） --------------
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      # -- Cloud SDKセットアップ --------------
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # -- Docker認証 --------------
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
 
-      # -- RSS Collectorのビルドとプッシュ --------------
-      - name: Build and push RSS Collector
+  # -- RSS Collector ビルド --------------
+  build-rss-collector:
+    name: Build RSS Collector
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+
+      - name: Build and push Docker image
         run: |
           cd jobs/rss-collector
           docker build -t ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
@@ -47,8 +69,32 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/rss-collector:latest
 
-      # -- Metadata Generatorのビルドとプッシュ --------------
-      - name: Build and push Metadata Generator
+  # -- Metadata Generator ビルド --------------
+  build-metadata-generator:
+    name: Build Metadata Generator
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+
+      - name: Build and push Docker image
         run: |
           cd jobs/metadata-generator
           docker build -t ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }} \
@@ -56,8 +102,32 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:latest
 
-      # -- Frontendのビルドとプッシュ --------------
-      - name: Build and push Frontend
+  # -- Frontend ビルド --------------
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+
+      - name: Build and push Docker image
         run: |
           cd frontend
           docker build -t ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }} \
@@ -65,8 +135,26 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/frontend:latest
 
-      # -- RSS Collector Cloud Run Jobデプロイ --------------
-      - name: Deploy RSS Collector Job
+  # -- RSS Collector デプロイ --------------
+  deploy-rss-collector:
+    name: Deploy RSS Collector
+    runs-on: ubuntu-latest
+    needs: build-rss-collector
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run Job
         run: |
           gcloud run jobs update rss-collector \
             --image ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
@@ -93,8 +181,26 @@ jobs:
             --max-retries 3 \
             --task-timeout 1800s
 
-      # -- Metadata Generator Cloud Run Jobデプロイ --------------
-      - name: Deploy Metadata Generator Job
+  # -- Metadata Generator デプロイ --------------
+  deploy-metadata-generator:
+    name: Deploy Metadata Generator
+    runs-on: ubuntu-latest
+    needs: build-metadata-generator
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run Job
         run: |
           gcloud run jobs update metadata-generator \
             --image ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }} \
@@ -121,8 +227,26 @@ jobs:
             --max-retries 3 \
             --task-timeout 3600s
 
-      # -- Frontend Cloud Run Serviceデプロイ --------------
-      - name: Deploy Frontend Service
+  # -- Frontend デプロイ --------------
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run Service
         run: |
           gcloud run deploy frontend \
             --image ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }} \
@@ -140,10 +264,26 @@ jobs:
             --min-instances 0 \
             --max-instances 10
 
-      # -- デプロイ完了通知 --------------
-      - name: Deployment complete
+  # -- デプロイ完了サマリー --------------
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-rss-collector, deploy-metadata-generator, deploy-frontend]
+    if: always()
+
+    steps:
+      - name: Display deployment results
         run: |
-          echo "Deployment completed successfully!"
+          echo "============================================"
+          echo "  Deployment Summary"
+          echo "============================================"
+          echo ""
           echo "RSS Collector: ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }}"
           echo "Metadata Generator: ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }}"
           echo "Frontend: ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }}"
+          echo ""
+          echo "Deployment Status:"
+          echo "  RSS Collector: ${{ needs.deploy-rss-collector.result }}"
+          echo "  Metadata Generator: ${{ needs.deploy-metadata-generator.result }}"
+          echo "  Frontend: ${{ needs.deploy-frontend.result }}"
+          echo "============================================"

@@ -84,8 +84,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Python lib directories only (not frontend/src/lib)
+/lib/
+/lib64/
+jobs/**/lib/
+jobs/**/lib64/
 parts/
 sdist/
 var/

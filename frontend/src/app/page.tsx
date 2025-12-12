@@ -1,18 +1,28 @@
 import { ArticleCard } from "@/components/ArticleCard";
 import { FilterPanel } from "@/components/FilterPanel";
-import { getArticles, getAllSources, getAllTags } from "@/repositories/articleRepository";
+import {
+  getArticles,
+  getAllSources,
+  getAllTags,
+} from "@/repositories/articleRepository";
 
+// 動的レンダリングを強制
+export const dynamic = "force-dynamic";
+
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 interface PageProps {
-  searchParams: Promise<{ source?: string; tag?: string }>;
+  params: Promise<Record<string, never>>;
+  searchParams: SearchParams;
 }
 
-
 // -- メインページ --------------
-export default async function Home({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const source = params.source;
-  const tag = params.tag;
+export default async function Home(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const source =
+    typeof searchParams.source === "string" ? searchParams.source : undefined;
+  const tag =
+    typeof searchParams.tag === "string" ? searchParams.tag : undefined;
 
   // データ取得
   const [articles, sources, tags] = await Promise.all([

@@ -283,7 +283,7 @@ def main():
     print("RSS Collector 開始")
 
     # RSSフィード設定読み込み
-    rss_feeds_path = os.path.join(os.path.dirname(__file__), "..", "rss_feeds.yaml")
+    rss_feeds_path = os.path.join(os.path.dirname(__file__), "rss_feeds.yaml")
     sources = load_rss_feeds(rss_feeds_path)
 
     # DB接続

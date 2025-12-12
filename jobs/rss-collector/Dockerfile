@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py .
 
 # rss_feeds.yamlをコピー
-COPY ../rss_feeds.yaml ./rss_feeds.yaml
+COPY rss_feeds.yaml ./rss_feeds.yaml
 
 # 実行
 CMD ["python", "main.py"]

@@ -213,7 +213,7 @@ resource "google_secret_manager_secret_iam_member" "cloudrun_openai_key_access" 
 resource "google_cloud_scheduler_job" "rss_collector" {
   name             = "rss-collector-trigger"
   description      = "Trigger RSS Collector job every 6 hours"
-  schedule         = "0 0,6,12,18 * * *"
+  schedule         = "0 5,23 * * *"
   time_zone        = "Asia/Tokyo"
   attempt_deadline = "1800s"
 
@@ -239,9 +239,9 @@ resource "google_cloud_scheduler_job" "rss_collector" {
 resource "google_cloud_scheduler_job" "metadata_generator" {
   name             = "metadata-generator-trigger"
   description      = "Trigger Metadata Generator job every 6 hours (1 hour after RSS collection)"
-  schedule         = "0 1,7,13,19 * * *"
+  schedule         = "0 4,22 * * *"
   time_zone        = "Asia/Tokyo"
-  attempt_deadline = "3600s"
+  attempt_deadline = "1800s"
 
   retry_config {
     retry_count = 3

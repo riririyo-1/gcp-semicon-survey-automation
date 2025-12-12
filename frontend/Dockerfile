@@ -8,7 +8,7 @@ RUN npm install -g pnpm
 
 # 依存関係のインストール
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # アプリケーションファイルコピー
 COPY . .

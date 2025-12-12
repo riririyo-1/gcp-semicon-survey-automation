@@ -314,10 +314,12 @@ mkdir -p jobs/rss-collector
 
 ```text
 feedparser==6.0.11
-psycopg2-binary==2.9.9
-PyYAML==6.0.1
 requests==2.31.0
 beautifulsoup4==4.12.3
+psycopg2-binary==2.9.9
+python-dotenv==1.0.1
+PyYAML==6.0.1
+openai==1.54.5
 ```
 
 **jobs/rss-collector/main.py**
@@ -390,12 +392,13 @@ mkdir -p jobs/metadata-generator
 **jobs/metadata-generator/requirements.txt**
 
 ```text
-openai==1.12.0
-psycopg2-binary==2.9.9
 requests==2.31.0
 beautifulsoup4==4.12.3
-langchain==0.1.0
-langchain-community==0.0.13
+psycopg2-binary==2.9.9
+python-dotenv==1.0.1
+langchain==0.3.13
+langchain-openai==0.2.14
+openai>=1.58.1
 ```
 
 **jobs/metadata-generator/main.py**
@@ -557,7 +560,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml* ./
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm && pnpm install
 
 # ビルド
 FROM base AS builder
@@ -565,7 +568,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN corepack enable pnpm && pnpm build
+RUN npm install -g pnpm && pnpm build
 
 # 本番イメージ
 FROM base AS runner
@@ -663,6 +666,9 @@ brew install --cask google-cloud-sdk
 
 # GitHub CLI
 brew install gh
+
+# PostgreSQL クライアント
+brew install postgresql@15
 ```
 
 ### GCP Initial Setup
@@ -670,14 +676,17 @@ brew install gh
 #### 1. GCP ログインとプロジェクト設定
 
 ```bash
+# 環境変数設定
+export PROJECT_ID="gcp-semicon-survey-automation"
+export REGION="asia-northeast1"
+
 # GCPログイン（Terraform実行に必要）
 gcloud auth login
 gcloud auth application-default login
 
 # プロジェクトIDを設定
-export PROJECT_ID="gcp-semicon-survey-automation"
-export REGION="asia-northeast1"
 gcloud config set project $PROJECT_ID
+gcloud auth application-default set-quota-project $PROJECT_ID
 ```
 
 #### 2. 必要な GCP API を有効化
@@ -712,6 +721,8 @@ gsutil mb -p ${PROJECT_ID} -l ${REGION} gs://${PROJECT_ID}-terraform-state
 # バージョニングを有効化
 gsutil versioning set on gs://${PROJECT_ID}-terraform-state
 ```
+
+※ 時間がかかるため注意
 
 #### 2. Terraform ファイルの確認
 

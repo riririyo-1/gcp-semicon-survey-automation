@@ -12,35 +12,48 @@ env:
   ARTIFACT_REGISTRY: asia-northeast1-docker.pkg.dev/gcp-semicon-survey-automation/containers
 
 jobs:
-  # -- 認証・セットアップ --------------
-  setup:
-    name: Setup GCP Authentication
+  # -- 変更検出 --------------
+  detect-changes:
+    name: Detect Changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
-
+      pull-requests: read
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      rss-collector: ${{ steps.filter.outputs.rss-collector }}
+      metadata-generator: ${{ steps.filter.outputs.metadata-generator }}
+      infra: ${{ steps.filter.outputs.infra }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          fetch-depth: 0
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+      - name: Detect file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/deploy.yml'
+            rss-collector:
+              - 'jobs/rss-collector/**'
+              - '.github/workflows/deploy.yml'
+            metadata-generator:
+              - 'jobs/metadata-generator/**'
+              - '.github/workflows/deploy.yml'
+            infra:
+              - 'infra/**'
+              - '.github/workflows/deploy.yml'
 
   # -- RSS Collector ビルド --------------
   build-rss-collector:
     name: Build RSS Collector
     runs-on: ubuntu-latest
-    needs: setup
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rss-collector == 'true'
     permissions:
       contents: read
       id-token: write
@@ -73,7 +86,8 @@ jobs:
   build-metadata-generator:
     name: Build Metadata Generator
     runs-on: ubuntu-latest
-    needs: setup
+    needs: detect-changes
+    if: needs.detect-changes.outputs.metadata-generator == 'true'
     permissions:
       contents: read
       id-token: write
@@ -106,7 +120,8 @@ jobs:
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
-    needs: setup
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
     permissions:
       contents: read
       id-token: write
@@ -140,6 +155,7 @@ jobs:
     name: Deploy RSS Collector
     runs-on: ubuntu-latest
     needs: build-rss-collector
+    if: needs.detect-changes.outputs.rss-collector == 'true'
     permissions:
       contents: read
       id-token: write
@@ -186,6 +202,7 @@ jobs:
     name: Deploy Metadata Generator
     runs-on: ubuntu-latest
     needs: build-metadata-generator
+    if: needs.detect-changes.outputs.metadata-generator == 'true'
     permissions:
       contents: read
       id-token: write
@@ -232,6 +249,7 @@ jobs:
     name: Deploy Frontend
     runs-on: ubuntu-latest
     needs: build-frontend
+    if: needs.detect-changes.outputs.frontend == 'true'
     permissions:
       contents: read
       id-token: write
@@ -264,11 +282,54 @@ jobs:
             --min-instances 0 \
             --max-instances 10
 
+  # -- Terraform デプロイ --------------
+  deploy-infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.infra == 'true'
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        run: |
+          cd infra
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd infra
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd infra
+          terraform apply -auto-approve tfplan
+
   # -- デプロイ完了サマリー --------------
   deployment-summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [deploy-rss-collector, deploy-metadata-generator, deploy-frontend]
+    needs: [detect-changes, deploy-rss-collector, deploy-metadata-generator, deploy-frontend, deploy-infra]
     if: always()
 
     steps:
@@ -278,12 +339,15 @@ jobs:
           echo "  Deployment Summary"
           echo "============================================"
           echo ""
-          echo "RSS Collector: ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }}"
-          echo "Metadata Generator: ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }}"
-          echo "Frontend: ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }}"
+          echo "Changes Detected:"
+          echo "  Frontend: ${{ needs.detect-changes.outputs.frontend }}"
+          echo "  RSS Collector: ${{ needs.detect-changes.outputs.rss-collector }}"
+          echo "  Metadata Generator: ${{ needs.detect-changes.outputs.metadata-generator }}"
+          echo "  Infrastructure: ${{ needs.detect-changes.outputs.infra }}"
           echo ""
           echo "Deployment Status:"
           echo "  RSS Collector: ${{ needs.deploy-rss-collector.result }}"
           echo "  Metadata Generator: ${{ needs.deploy-metadata-generator.result }}"
           echo "  Frontend: ${{ needs.deploy-frontend.result }}"
+          echo "  Infrastructure: ${{ needs.deploy-infra.result }}"
           echo "============================================"

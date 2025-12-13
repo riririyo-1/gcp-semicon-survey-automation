@@ -1,0 +1,43 @@
+{
+  "app": {
+    "title": "Semiconductor Industry Survey",
+    "description": "Latest news and insights from the semiconductor industry"
+  },
+  "nav": {
+    "home": "Home",
+    "articles": "Articles",
+    "about": "About"
+  },
+  "article": {
+    "readMore": "Read more",
+    "publishedOn": "Published on",
+    "source": "Source",
+    "tags": "Tags",
+    "noImage": "No image available",
+    "loading": "Loading...",
+    "loadMore": "Load more",
+    "noArticles": "No articles found",
+    "noMore": "No more articles to load",
+    "error": "Unable to connect to the database. Please try again later.",
+    "retry": "Retry"
+  },
+  "filter": {
+    "title": "Filters",
+    "allSources": "All Sources",
+    "allTags": "All Tags",
+    "clearFilters": "Clear Filters",
+    "search": "Search articles..."
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "en": "English",
+    "ja": "日本語"
+  },
+  "footer": {
+    "copyright": "© 2025 Semiconductor Industry Survey. All rights reserved."
+  }
+}

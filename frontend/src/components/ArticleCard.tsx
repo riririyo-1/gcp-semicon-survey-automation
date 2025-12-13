@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Article } from "@/types/article";
+import { useTranslation } from "@/hooks/useTranslation";
 
 
 interface ArticleCardProps {
@@ -10,10 +13,12 @@ interface ArticleCardProps {
 
 // -- 記事カードコンポーネント --------------
 export function ArticleCard({ article }: ArticleCardProps) {
+  const { t, locale } = useTranslation();
+
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "日付不明";
+    if (!dateStr) return t("article.publishedOn");
     const date = new Date(dateStr);
-    return date.toLocaleDateString("ja-JP", {
+    return date.toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -34,7 +39,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           />
         ) : (
           <div className="w-full h-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
-            <span className="text-gray-500 dark:text-gray-400">No Image</span>
+            <span className="text-gray-500 dark:text-gray-400">{t("article.noImage")}</span>
           </div>
         )}
       </div>

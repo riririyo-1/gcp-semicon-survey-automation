@@ -1,0 +1,43 @@
+{
+  "app": {
+    "title": "半導体TOPICS",
+    "description": "自動収集版。半導体業界の最新ニュースとトレンドを自動収集でお届けします。"
+  },
+  "nav": {
+    "home": "ホーム",
+    "articles": "記事",
+    "about": "について"
+  },
+  "article": {
+    "readMore": "続きを読む",
+    "publishedOn": "公開日",
+    "source": "出典",
+    "tags": "タグ",
+    "noImage": "画像なし",
+    "loading": "読み込み中...",
+    "loadMore": "もっと見る",
+    "noArticles": "記事が見つかりません",
+    "noMore": "これ以上記事はありません",
+    "error": "データベースに接続できません。しばらくしてから再度お試しください。",
+    "retry": "再試行"
+  },
+  "filter": {
+    "title": "フィルター",
+    "allSources": "すべての出典",
+    "allTags": "すべてのタグ",
+    "clearFilters": "フィルターをクリア",
+    "search": "記事を検索..."
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム"
+  },
+  "language": {
+    "en": "English",
+    "ja": "日本語"
+  },
+  "footer": {
+    "copyright": "© 2025 半導体業界サーベイ. All rights reserved."
+  }
+}

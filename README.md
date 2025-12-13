@@ -46,8 +46,9 @@
 運用の手間を極小化し、本質的なロジック（プロンプト調整など）に集中するための構成。
 
 - **CI/CD (GitHub Actions):**
-  - `main` ブランチへの Push をトリガーに、Docker ビルド → Artifact Registry への Push → Cloud Run へのデプロイを完全自動化。
-  - Terraform の `plan` / `apply` もワークフローに統合（予定）。
+  - `main` ブランチへの Push をトリガーに、変更検出 → Docker ビルド → Artifact Registry への Push → Cloud Run へのデプロイを完全自動化。
+  - **変更検出ベース:** `dorny/paths-filter` を使用し、変更のあったコンポーネントのみビルド・デプロイ（高速化・コスト削減）。
+  - Terraform の `plan` / `apply` もワークフローに統合済み（`infra/` 変更時のみ実行）。
   - **OIDC (OpenID Connect):** サービスアカウントキー（JSON）を発行・保存せず、セキュアに GCP 認証を行う。
 
 ---
@@ -168,22 +169,22 @@ graph TB
 
 ## CI/CD フロー
 
-https://github.com/riririyo-1/gcp-notion-automation の .github/workflows/deploy.yml を参考にする。
+変更検出ベースの効率的なデプロイワークフローを実装。
 
 ```mermaid
 graph TB
-    A[Push to main] --> B[変更検出]
+    A[Push to main] --> B[変更検出<br/>dorny/paths-filter]
 
-    B --> C{変更内容}
+    B --> C{変更されたコンポーネント}
 
-    C -->|infra/ のみ| D[Infraデプロイ]
-    C -->|jobs/ または frontend/ のみ| E[Appデプロイ]
-    C -->|両方| F[Infraデプロイ]
+    C -->|frontend/| D[Frontend<br/>Build & Deploy]
+    C -->|jobs/rss-collector/| E[RSS Collector<br/>Build & Deploy]
+    C -->|jobs/metadata-generator/| F[Metadata Generator<br/>Build & Deploy]
+    C -->|infra/| G[Terraform<br/>Plan & Apply]
 
-    F --> G[Appデプロイ]
-
-    D --> H[完了]
+    D --> H[Deployment Summary]
     E --> H
+    F --> H
     G --> H
 
     style A fill:#e1f5ff
@@ -192,11 +193,28 @@ graph TB
     style D fill:#c8e6c9
     style E fill:#c8e6c9
     style F fill:#c8e6c9
-    style G fill:#c8e6c9
+    style G fill:#ffb74d
     style H fill:#f3e5f5
 ```
 
-※ jobs/ や frontend/ のみ更新した場合、infra の更新を待機せずに並列実行する。
+### ワークフローの特徴
+
+- **変更検出:** `dorny/paths-filter` で変更されたディレクトリを検出
+- **条件付き実行:** 変更のあったコンポーネントのみビルド・デプロイ
+- **並列実行:** 複数のビルドジョブが同時実行（高速化）
+- **コスト削減:** 不要なビルド・デプロイをスキップ
+
+### 検出対象パス
+
+| パス                        | トリガーされるジョブ         |
+| --------------------------- | ---------------------------- |
+| `frontend/**`               | Frontend ビルド & デプロイ   |
+| `jobs/rss-collector/**`     | RSS Collector ビルド & デプロイ |
+| `jobs/metadata-generator/**` | Metadata Generator ビルド & デプロイ |
+| `infra/**`                  | Terraform Plan & Apply       |
+| `.github/workflows/deploy.yml` | 全コンポーネントのデプロイ |
+
+※ ワークフローファイル自体が変更された場合、全コンポーネントがデプロイされる。
 
 ---
 
@@ -483,7 +501,7 @@ mkdir -p frontend/src/lib/repositories
 
 ```json
 {
-  "name": "semicon-survey-frontend",
+  "name": "gcp-semicon-survey-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -493,20 +511,23 @@ mkdir -p frontend/src/lib/repositories
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.0.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "pg": "^8.11.3"
+    "@google-cloud/secret-manager": "^6.1.1",
+    "autoprefixer": "^10.4.20",
+    "next": "15.1.3",
+    "pg": "^8.13.1",
+    "postcss": "^8.4.49",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "@types/pg": "^8.11.0",
-    "typescript": "^5",
-    "tailwindcss": "^3.4.0",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32"
+    "@types/node": "^22",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.3",
+    "typescript": "^5"
   }
 }
 ```
@@ -552,43 +573,52 @@ module.exports = nextConfig;
 **frontend/Dockerfile**
 
 ```dockerfile
-FROM node:20-alpine AS base
+# -- ビルドステージ --------------
+FROM node:20-alpine AS builder
 
-# 依存関係インストール
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# pnpmインストール
+RUN npm install -g pnpm
+
+# 依存関係のインストール
 COPY package.json pnpm-lock.yaml* ./
-RUN npm install -g pnpm && pnpm install
+RUN pnpm install
 
-# ビルド
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# アプリケーションファイルコピー
 COPY . .
 
-RUN npm install -g pnpm && pnpm build
+# Next.jsビルド
+RUN pnpm build
 
-# 本番イメージ
-FROM base AS runner
+
+# -- 実行ステージ --------------
+FROM node:20-alpine AS runner
+
 WORKDIR /app
 
-ENV NODE_ENV production
+# 環境変数設定
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
+# 非rootユーザー作成
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+# ビルド成果物をコピー
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# 非rootユーザーに切り替え
 USER nextjs
 
+# ポート公開
 EXPOSE 3000
 
-ENV PORT 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
+# 実行
 CMD ["node", "server.js"]
 ```
 
@@ -596,13 +626,72 @@ CMD ["node", "server.js"]
 
 - `frontend/src/app/page.tsx` - トップページ（記事一覧、トップ画像表示）
 - `frontend/src/app/articles/[id]/page.tsx` - 記事詳細ページ
-- `frontend/src/app/api/articles/route.ts` - API Route（記事一覧取得）
-- `frontend/src/components/ArticleList.tsx` - 記事一覧コンポーネント
 - `frontend/src/components/ArticleCard.tsx` - 記事カードコンポーネント（画像、タイトル、要約、タグを表示）
-- `frontend/src/components/FilterBar.tsx` - フィルターバーコンポーネント（出典、タグでフィルタリング）
-- `frontend/src/lib/db.ts` - PostgreSQL 接続設定
-- `frontend/src/lib/repositories/articleRepository.ts` - 記事データアクセス層
+- `frontend/src/components/FilterPanel.tsx` - フィルターパネルコンポーネント（出典、タグでフィルタリング）
+- `frontend/src/lib/db.ts` - PostgreSQL 接続設定（Secret Manager から直接パスワード取得）
+- `frontend/src/repositories/articleRepository.ts` - 記事データアクセス層
 - `frontend/src/types/article.ts` - 記事型定義
+
+**データベース接続の実装:**
+
+フロントエンドは Secret Manager から直接 DB パスワードを取得する方式を採用。
+
+```typescript
+// frontend/src/lib/db.ts
+import { Pool } from "pg";
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+
+let pool: Pool | null = null;
+let secretClient: SecretManagerServiceClient | null = null;
+
+// -- Secret Manager からパスワード取得 --------------
+async function getDbPassword(): Promise<string> {
+  if (!secretClient) {
+    secretClient = new SecretManagerServiceClient();
+  }
+
+  const projectId = "gcp-semicon-survey-automation";
+  const secretName = `projects/${projectId}/secrets/db-password/versions/latest`;
+
+  const [version] = await secretClient.accessSecretVersion({ name: secretName });
+  const password = version.payload?.data?.toString();
+
+  if (!password) {
+    throw new Error("Failed to retrieve password from Secret Manager");
+  }
+
+  return password;
+}
+
+// -- データベース接続プールの取得 --------------
+export async function getPool(): Promise<Pool> {
+  if (!pool) {
+    const dbPassword = await getDbPassword();
+
+    const host = process.env.DB_SOCKET || "/cloudsql/...";
+    const user = process.env.DB_USER || "postgres";
+    const database = process.env.DB_NAME || "semicon_survey";
+
+    pool = new Pool({
+      user,
+      password: dbPassword,
+      database,
+      host,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
+  }
+
+  return pool;
+}
+```
+
+**メリット:**
+
+- DB パスワードを環境変数として渡す必要がない（セキュリティ向上）
+- Cloud Run 環境では自動的にプロジェクトが認識される
+- パスワードローテーション時も環境変数の更新不要
 
 **フロントエンド表示要件:**
 
@@ -950,9 +1039,11 @@ gcloud run deploy frontend \
 ※ **環境変数の設定方法:**
 
 - `--set-secrets` - Secret Manager から機密情報を環境変数として注入
+  - Frontend では `DB_PASSWORD` は不要（コード内で Secret Manager から直接取得）
 - `--set-env-vars` - 通常の環境変数を設定
 - `--add-cloudsql-instances` - Cloud SQL への接続を有効化（Cloud SQL Auth Proxy が自動で起動）
 - `--service-account` - Cloud Run が使用するサービスアカウント（Terraform で作成済み）
+  - サービスアカウントに Secret Manager へのアクセス権限が付与されている必要がある
 
 ### 動作確認
 

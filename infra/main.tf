@@ -3,6 +3,29 @@
 # ================================================================================
 
 
+# -- 必要なAPIの有効化 --------------
+resource "google_project_service" "vpcaccess" {
+  project = var.project_id
+  service = "vpcaccess.googleapis.com"
+
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "compute" {
+  project = var.project_id
+  service = "compute.googleapis.com"
+
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "run" {
+  project = var.project_id
+  service = "run.googleapis.com"
+
+  disable_on_destroy = false
+}
+
+
 # -- ランダムパスワード生成（Cloud SQL用） --------------
 resource "random_password" "db_password" {
   length  = 32
@@ -178,6 +201,20 @@ resource "google_project_iam_member" "github_actions_cloudbuild_builds_editor" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Compute Network Admin（VPC Connector作成のため）
+resource "google_project_iam_member" "github_actions_compute_network_admin" {
+  project = var.project_id
+  role    = "roles/compute.networkAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# VPC Access Admin（VPC Connector管理のため）
+resource "google_project_iam_member" "github_actions_vpcaccess_admin" {
+  project = var.project_id
+  role    = "roles/vpcaccess.admin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 
 # -- サービスアカウント（Cloud Run Jobs/Service用） --------------
 resource "google_service_account" "cloudrun_app" {
@@ -213,6 +250,11 @@ resource "google_vpc_access_connector" "connector" {
   region        = var.region
   network       = "default"
   ip_cidr_range = "10.8.0.0/28"
+
+  depends_on = [
+    google_project_service.vpcaccess,
+    google_project_service.compute
+  ]
 }
 
 
@@ -265,8 +307,8 @@ resource "google_cloud_run_v2_job" "rss_collector" {
 
         resources {
           limits = {
-            cpu    = "1"
-            memory = "512Mi"
+            cpu    = "2"
+            memory = "1Gi"
           }
         }
       }
@@ -337,8 +379,8 @@ resource "google_cloud_run_v2_job" "metadata_generator" {
 
         resources {
           limits = {
-            cpu    = "1"
-            memory = "512Mi"
+            cpu    = "2"
+            memory = "2Gi"
           }
         }
       }

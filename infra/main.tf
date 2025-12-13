@@ -222,6 +222,20 @@ resource "google_project_iam_member" "github_actions_storage_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Project IAM Admin（IAMポリシー管理のため）
+resource "google_project_iam_member" "github_actions_project_iam_admin" {
+  project = var.project_id
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# Workload Identity Pool Admin（Workload Identity管理のため）
+resource "google_project_iam_member" "github_actions_workload_identity_pool_admin" {
+  project = var.project_id
+  role    = "roles/iam.workloadIdentityPoolAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 
 # -- サービスアカウント（Cloud Run Jobs/Service用） --------------
 resource "google_service_account" "cloudrun_app" {

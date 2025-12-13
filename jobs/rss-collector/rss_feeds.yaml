@@ -41,3 +41,127 @@ sources:
     feeds:
       - url: "https://xtech.nikkei.com/rss/index.rdf"
         category: "technology"
+
+  "GIGAZINE":
+    feeds:
+      - url: "https://gigazine.net/news/rss_2.0/"
+        category: "technology"
+
+  "Semiconductor Today":
+    feeds:
+      - url: "https://www.semiconductor-today.com/rss/news.xml"
+        category: "technology"
+
+  "Science Portal":
+    feeds:
+      - url: "https://scienceportal.jst.go.jp/feed/rss.xml"
+        category: "science"
+
+  "WIRED Japan":
+    feeds:
+      - url: "https://wired.jp/feed/rss"
+        category: "technology"
+
+  # === 海外主要テックメディア（Techmeme対象） ===
+  "TechCrunch":
+    feeds:
+      - url: "https://techcrunch.com/feed/"
+        category: "technology"
+
+  "WIRED":
+    feeds:
+      - url: "https://www.wired.com/feed/rss"
+        category: "technology"
+      - url: "https://www.wired.com/feed/category/business/latest/rss"
+        category: "business"
+      - url: "https://www.wired.com/feed/category/science/latest/rss"
+        category: "science"
+      - url: "https://www.wired.com/feed/category/gear/latest/rss"
+        category: "technology"
+      - url: "https://www.wired.com/feed/category/security/latest/rss"
+        category: "technology"
+      - url: "https://www.wired.com/feed/tag/ai/latest/rss"
+        category: "ai"
+
+  "The Verge":
+    feeds:
+      - url: "https://www.theverge.com/rss/partner/techmeme-full-article/rss.xml"
+        category: "technology"
+
+  "Ars Technica":
+    feeds:
+      - url: "http://feeds.arstechnica.com/arstechnica/index/"
+        category: "technology"
+
+  "Engadget":
+    feeds:
+      - url: "https://www.engadget.com/rss.xml"
+        category: "technology"
+
+  "MIT Technology Review":
+    feeds:
+      - url: "https://www.technologyreview.com/feed/"
+        category: "technology"
+
+  # === 金融・ビジネスメディア ===
+  "Bloomberg":
+    feeds:
+      - url: "https://assets.wor.jp/rss/rdf/bloomberg/top.rdf"
+        category: "business"
+      - url: "https://feeds.bloomberg.com/technology/news.rss"
+        category: "technology"
+
+  "Financial Times":
+    feeds:
+      - url: "https://www.ft.com/technology?format=rss"
+        category: "technology"
+
+  "Forbes":
+    feeds:
+      - url: "https://www.forbes.com/news/index.xml"
+        category: "business"
+      - url: "https://www.forbesjapan.com/feed/"
+        category: "business"
+      - url: "https://www.forbes.com/technology/feed/"
+        category: "technology"
+
+  "Fortune":
+    feeds:
+      - url: "https://fortune.com/feed/fortune-feeds/?id=3689511"
+        category: "business"
+
+  "The Information":
+    feeds:
+      - url: "https://www.theinformation.com/feed"
+        category: "technology"
+
+  # === 主要報道機関 ===
+  "New York Times":
+    feeds:
+      - url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+        category: "news"
+
+  "The Guardian":
+    feeds:
+      - url: "https://www.theguardian.com/us/technology/rss"
+        category: "technology"
+
+  "BBC":
+    feeds:
+      - url: "https://feeds.bbci.co.uk/news/technology/rss.xml"
+        category: "technology"
+
+  "CNBC":
+    feeds:
+      - url: "https://www.cnbc.com/id/19854910/device/rss/rss.html"
+        category: "business"
+
+  "NPR":
+    feeds:
+      - url: "https://feeds.npr.org/1019/rss.xml"
+        category: "technology"
+
+  "CBS News":
+    feeds:
+      - url: "https://www.cbsnews.com/latest/rss/main"
+        category: "news"

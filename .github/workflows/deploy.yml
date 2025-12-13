@@ -329,7 +329,14 @@ jobs:
   deployment-summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [detect-changes, deploy-rss-collector, deploy-metadata-generator, deploy-frontend, deploy-infra]
+    needs:
+      [
+        detect-changes,
+        deploy-rss-collector,
+        deploy-metadata-generator,
+        deploy-frontend,
+        deploy-infra,
+      ]
     if: always()
 
     steps:

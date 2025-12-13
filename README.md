@@ -206,13 +206,13 @@ graph TB
 
 ### 検出対象パス
 
-| パス                        | トリガーされるジョブ         |
-| --------------------------- | ---------------------------- |
-| `frontend/**`               | Frontend ビルド & デプロイ   |
-| `jobs/rss-collector/**`     | RSS Collector ビルド & デプロイ |
-| `jobs/metadata-generator/**` | Metadata Generator ビルド & デプロイ |
-| `infra/**`                  | Terraform Plan & Apply       |
-| `.github/workflows/deploy.yml` | 全コンポーネントのデプロイ |
+| パス                           | トリガーされるジョブ                 |
+| ------------------------------ | ------------------------------------ |
+| `frontend/**`                  | Frontend ビルド & デプロイ           |
+| `jobs/rss-collector/**`        | RSS Collector ビルド & デプロイ      |
+| `jobs/metadata-generator/**`   | Metadata Generator ビルド & デプロイ |
+| `infra/**`                     | Terraform Plan & Apply               |
+| `.github/workflows/deploy.yml` | 全コンポーネントのデプロイ           |
 
 ※ ワークフローファイル自体が変更された場合、全コンポーネントがデプロイされる。
 
@@ -653,7 +653,9 @@ async function getDbPassword(): Promise<string> {
   const projectId = "gcp-semicon-survey-automation";
   const secretName = `projects/${projectId}/secrets/db-password/versions/latest`;
 
-  const [version] = await secretClient.accessSecretVersion({ name: secretName });
+  const [version] = await secretClient.accessSecretVersion({
+    name: secretName,
+  });
   const password = version.payload?.data?.toString();
 
   if (!password) {

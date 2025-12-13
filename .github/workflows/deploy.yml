@@ -154,7 +154,7 @@ jobs:
   deploy-rss-collector:
     name: Deploy RSS Collector
     runs-on: ubuntu-latest
-    needs: build-rss-collector
+    needs: [detect-changes, build-rss-collector]
     if: needs.detect-changes.outputs.rss-collector == 'true'
     permissions:
       contents: read
@@ -201,7 +201,7 @@ jobs:
   deploy-metadata-generator:
     name: Deploy Metadata Generator
     runs-on: ubuntu-latest
-    needs: build-metadata-generator
+    needs: [detect-changes, build-metadata-generator]
     if: needs.detect-changes.outputs.metadata-generator == 'true'
     permissions:
       contents: read
@@ -248,7 +248,7 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
-    needs: build-frontend
+    needs: [detect-changes, build-frontend]
     if: needs.detect-changes.outputs.frontend == 'true'
     permissions:
       contents: read

@@ -1,12 +1,12 @@
 import { InfiniteScrollList } from "@/components/InfiniteScrollList";
-import { FilterSidebar } from "@/components/FilterSidebar";
+import { SearchHeader } from "@/components/SearchHeader";
 import { PageHeader } from "@/components/PageHeader";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { Article } from "@/types/article";
 import {
   getArticles,
-  getAllSources,
-  getAllTags,
+  getSources,
+  getTags,
 } from "@/repositories/articleRepository";
 
 // 動的レンダリングを強制
@@ -36,8 +36,8 @@ export default async function Home(props: PageProps) {
   try {
     const results = await Promise.all([
       getArticles(source, tag, 100, 0),
-      getAllSources(),
-      getAllTags(),
+      getSources(),
+      getTags(),
     ]);
     articles = results[0];
     sources = results[1];
@@ -52,13 +52,13 @@ export default async function Home(props: PageProps) {
       {/* ヘッダー */}
       <PageHeader />
 
-      {/* メインコンテンツ */}
-      <main className="flex-grow flex">
-        {/* フィルターサイドバー */}
-        <FilterSidebar sources={sources} tags={tags} />
+      {/* Search Header (Sticky) */}
+      <SearchHeader sources={sources} tags={tags} />
 
+      {/* メインコンテンツ */}
+      <main className="flex-grow flex flex-col items-center">
         {/* 記事一覧 */}
-        <section className="flex-grow ml-16 px-6 py-8 transition-all duration-300">
+        <section className="w-full max-w-7xl px-4 sm:px-6 py-8 transition-all duration-300">
           {hasError ? (
             <ErrorMessage />
           ) : (

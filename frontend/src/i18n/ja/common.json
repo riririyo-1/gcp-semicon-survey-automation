@@ -23,10 +23,13 @@
   },
   "filter": {
     "title": "フィルター",
-    "allSources": "すべての出典",
-    "allTags": "すべてのタグ",
+    "Sources": "出典",
+    "Tags": "タグ",
+    "majorCategory": "大分類",
+    "minorCategory": "小分類",
     "clearFilters": "フィルターをクリア",
-    "search": "記事を検索..."
+    "search": "検索",
+    "searchPlaceholder": "記事を検索"
   },
   "theme": {
     "light": "ライト",

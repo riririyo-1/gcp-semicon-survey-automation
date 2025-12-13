@@ -64,7 +64,7 @@ export async function getArticleById(id: string): Promise<Article | null> {
 }
 
 // -- すべての出典を取得 --------------
-export async function getAllSources(): Promise<string[]> {
+export async function getSources(): Promise<string[]> {
   try {
     const pool = await getPool();
     const query = `
@@ -83,7 +83,7 @@ export async function getAllSources(): Promise<string[]> {
 }
 
 // -- すべてのタグを取得 --------------
-export async function getAllTags(): Promise<string[]> {
+export async function getTags(): Promise<string[]> {
   try {
     const pool = await getPool();
     const query = `

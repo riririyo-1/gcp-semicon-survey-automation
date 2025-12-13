@@ -23,10 +23,13 @@
   },
   "filter": {
     "title": "Filters",
-    "allSources": "All Sources",
-    "allTags": "All Tags",
+    "Sources": "Sources",
+    "Tags": "Tags",
+    "majorCategory": "Major Category",
+    "minorCategory": "Minor Category",
     "clearFilters": "Clear Filters",
-    "search": "Search articles..."
+    "search": "Search",
+    "searchPlaceholder": "Search articles..."
   },
   "theme": {
     "light": "Light",

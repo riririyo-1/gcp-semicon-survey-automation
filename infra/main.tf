@@ -236,6 +236,20 @@ resource "google_project_iam_member" "github_actions_workload_identity_pool_admi
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Service Account Admin（サービスアカウントIAM管理のため）
+resource "google_project_iam_member" "github_actions_service_account_admin" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# Cloud Scheduler Admin（Cloud Scheduler管理のため）
+resource "google_project_iam_member" "github_actions_cloudscheduler_admin" {
+  project = var.project_id
+  role    = "roles/cloudscheduler.admin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 
 # -- サービスアカウント（Cloud Run Jobs/Service用） --------------
 resource "google_service_account" "cloudrun_app" {

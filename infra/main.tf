@@ -215,6 +215,13 @@ resource "google_project_iam_member" "github_actions_vpcaccess_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Storage Admin（Terraform State管理のため）
+resource "google_project_iam_member" "github_actions_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 
 # -- サービスアカウント（Cloud Run Jobs/Service用） --------------
 resource "google_service_account" "cloudrun_app" {

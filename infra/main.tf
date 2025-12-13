@@ -207,6 +207,162 @@ resource "google_secret_manager_secret_iam_member" "cloudrun_openai_key_access" 
 }
 
 
+# -- VPC Connector（Cloud SQLプライベート接続用） --------------
+resource "google_vpc_access_connector" "connector" {
+  name          = "cloudrun-connector"
+  region        = var.region
+  network       = "default"
+  ip_cidr_range = "10.8.0.0/28"
+}
+
+
+# -- Cloud Run Jobs --------------
+
+# RSS Collector Job
+resource "google_cloud_run_v2_job" "rss_collector" {
+  name     = "rss-collector"
+  location = var.region
+
+  template {
+    template {
+      service_account = google_service_account.cloudrun_app.email
+      timeout         = "1800s"
+      max_retries     = 3
+
+      containers {
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/containers/rss-collector:latest"
+
+        env {
+          name  = "DB_HOST"
+          value = google_sql_database_instance.main.private_ip_address
+        }
+        env {
+          name  = "DB_NAME"
+          value = var.db_name
+        }
+        env {
+          name  = "DB_USER"
+          value = var.db_user
+        }
+        env {
+          name = "DB_PASSWORD"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.db_password.secret_id
+              version = "latest"
+            }
+          }
+        }
+        env {
+          name = "OPENAI_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.openai_api_key.secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        resources {
+          limits = {
+            cpu    = "1"
+            memory = "512Mi"
+          }
+        }
+      }
+
+      vpc_access {
+        connector = google_vpc_access_connector.connector.id
+        egress    = "PRIVATE_RANGES_ONLY"
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].template[0].containers[0].image,
+    ]
+  }
+
+  depends_on = [
+    google_vpc_access_connector.connector,
+    google_sql_database_instance.main
+  ]
+}
+
+# Metadata Generator Job
+resource "google_cloud_run_v2_job" "metadata_generator" {
+  name     = "metadata-generator"
+  location = var.region
+
+  template {
+    template {
+      service_account = google_service_account.cloudrun_app.email
+      timeout         = "3600s"
+      max_retries     = 3
+
+      containers {
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/containers/metadata-generator:latest"
+
+        env {
+          name  = "DB_HOST"
+          value = google_sql_database_instance.main.private_ip_address
+        }
+        env {
+          name  = "DB_NAME"
+          value = var.db_name
+        }
+        env {
+          name  = "DB_USER"
+          value = var.db_user
+        }
+        env {
+          name = "DB_PASSWORD"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.db_password.secret_id
+              version = "latest"
+            }
+          }
+        }
+        env {
+          name = "OPENAI_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.openai_api_key.secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        resources {
+          limits = {
+            cpu    = "1"
+            memory = "512Mi"
+          }
+        }
+      }
+
+      vpc_access {
+        connector = google_vpc_access_connector.connector.id
+        egress    = "PRIVATE_RANGES_ONLY"
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].template[0].containers[0].image,
+    ]
+  }
+
+  depends_on = [
+    google_vpc_access_connector.connector,
+    google_sql_database_instance.main
+  ]
+}
+
+
 # -- Cloud Scheduler（定期実行トリガー） --------------
 
 # RSS Collectorジョブ用スケジューラ（6時間おき: 0時、6時、12時、18時）
@@ -231,7 +387,8 @@ resource "google_cloud_scheduler_job" "rss_collector" {
   }
 
   depends_on = [
-    google_project_iam_member.cloudrun_cloudsql_client
+    google_project_iam_member.cloudrun_cloudsql_client,
+    google_cloud_run_v2_job.rss_collector
   ]
 }
 
@@ -257,6 +414,7 @@ resource "google_cloud_scheduler_job" "metadata_generator" {
   }
 
   depends_on = [
-    google_project_iam_member.cloudrun_cloudsql_client
+    google_project_iam_member.cloudrun_cloudsql_client,
+    google_cloud_run_v2_job.metadata_generator
   ]
 }

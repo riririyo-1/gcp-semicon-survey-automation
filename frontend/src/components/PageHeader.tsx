@@ -9,7 +9,7 @@ export function PageHeader() {
   const { t } = useTranslation();
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <header className="backdrop-blur-md bg-white/60 dark:bg-slate-900/60 border-b border-white/20 dark:border-white/10 shadow-sm">
       <div className="w-full px-6 py-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>

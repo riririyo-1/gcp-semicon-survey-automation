@@ -3,21 +3,47 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Pale Theme (Light) */
+  --background: #f0f4f8; /* Soft pale blue-gray */
+  --foreground: #1e293b; /* Slate 800 */
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Midnight Theme (Dark) */
+    --background: #0f172a; /* Slate 900 / Midnight Blue */
+    --foreground: #e2e8f0; /* Slate 200 */
+    --card-bg: rgba(30, 41, 59, 0.7); /* Slate 800 with opacity */
+    --glass-border: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Background Gradients */
+body {
+  background: linear-gradient(
+    to bottom right,
+    #f0f4f8,
+    #dbeafe
+  ); /* Pale gradient */
+  min-height: 100vh;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(
+      to bottom right,
+      #0f172a,
+      #1e1b4b
+    ); /* Midnight gradient */
   }
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  /* background is set via media queries above for gradients */
 }
 
 @layer utilities {

@@ -96,7 +96,7 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+    <div className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-white/20 dark:border-white/10 shadow-sm transition-colors">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col gap-4">
           {/* Top Row: Search Bar */}

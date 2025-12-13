@@ -250,6 +250,13 @@ resource "google_project_iam_member" "github_actions_cloudscheduler_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Service Usage Admin（API有効化のため）
+resource "google_project_iam_member" "github_actions_service_usage_admin" {
+  project = var.project_id
+  role    = "roles/serviceusage.serviceUsageAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 
 # -- サービスアカウント（Cloud Run Jobs/Service用） --------------
 resource "google_service_account" "cloudrun_app" {

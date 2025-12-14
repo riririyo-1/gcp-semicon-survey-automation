@@ -275,7 +275,7 @@ resource "google_cloud_run_v2_job" "rss_collector" {
   template {
     template {
       service_account = google_service_account.cloudrun_app.email
-      timeout         = "1800s"
+      timeout         = "7200s"
       max_retries     = 1
 
       containers {

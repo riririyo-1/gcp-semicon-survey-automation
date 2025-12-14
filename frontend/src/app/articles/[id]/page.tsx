@@ -97,15 +97,25 @@ export default async function ArticlePage(props: Props) {
               </div>
             )}
 
-            {/* Summary/Content */}
-            <div className="prose dark:prose-invert max-w-none mb-8">
-              <h3 className="text-lg font-bold mb-2">要約</h3>
-              <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
-                {article.summary ||
-                  article.content ||
-                  "この記事には要約がありません。"}
-              </p>
-            </div>
+            {/* Summary */}
+            {article.summary && (
+              <div className="prose dark:prose-invert max-w-none mb-8">
+                <h3 className="text-lg font-bold mb-2">要約</h3>
+                <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {article.summary}
+                </p>
+              </div>
+            )}
+
+            {/* Content */}
+            {article.content && (
+              <div className="prose dark:prose-invert max-w-none mb-8">
+                <h3 className="text-lg font-bold mb-2">記事本文</h3>
+                <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {article.content}
+                </p>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-8 flex justify-center">

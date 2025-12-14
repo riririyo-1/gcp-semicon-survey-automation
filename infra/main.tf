@@ -276,7 +276,7 @@ resource "google_cloud_run_v2_job" "rss_collector" {
     template {
       service_account = google_service_account.cloudrun_app.email
       timeout         = "1800s"
-      max_retries     = 3
+      max_retries     = 1
 
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/containers/rss-collector:latest"
@@ -354,7 +354,7 @@ resource "google_cloud_run_v2_job" "metadata_generator" {
     template {
       service_account = google_service_account.cloudrun_app.email
       timeout         = "3600s"
-      max_retries     = 3
+      max_retries     = 1
 
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/containers/metadata-generator:latest"

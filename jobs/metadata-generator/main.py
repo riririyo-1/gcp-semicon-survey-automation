@@ -39,7 +39,6 @@ def get_articles_without_metadata(conn) -> list[dict]:
         FROM articles
         WHERE metadata_generated = FALSE
         ORDER BY created_at DESC
-        LIMIT 100
     """
     cursor.execute(query)
     rows = cursor.fetchall()

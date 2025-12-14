@@ -4,20 +4,6 @@
 
 
 # -- 必要なAPIの有効化 --------------
-resource "google_project_service" "vpcaccess" {
-  project = var.project_id
-  service = "vpcaccess.googleapis.com"
-
-  disable_on_destroy = false
-}
-
-resource "google_project_service" "compute" {
-  project = var.project_id
-  service = "compute.googleapis.com"
-
-  disable_on_destroy = false
-}
-
 resource "google_project_service" "run" {
   project = var.project_id
   service = "run.googleapis.com"
@@ -201,17 +187,10 @@ resource "google_project_iam_member" "github_actions_cloudbuild_builds_editor" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
-# Compute Network Admin（VPC Connector作成のため）
+# Compute Network Admin（将来のために保持）
 resource "google_project_iam_member" "github_actions_compute_network_admin" {
   project = var.project_id
   role    = "roles/compute.networkAdmin"
-  member  = "serviceAccount:${google_service_account.github_actions.email}"
-}
-
-# VPC Access Admin（VPC Connector管理のため）
-resource "google_project_iam_member" "github_actions_vpcaccess_admin" {
-  project = var.project_id
-  role    = "roles/vpcaccess.admin"
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
@@ -286,20 +265,6 @@ resource "google_secret_manager_secret_iam_member" "cloudrun_openai_key_access" 
 }
 
 
-# -- VPC Connector（Cloud SQLプライベート接続用） --------------
-resource "google_vpc_access_connector" "connector" {
-  name          = "cloudrun-connector"
-  region        = var.region
-  network       = "default"
-  ip_cidr_range = "10.8.0.0/28"
-
-  depends_on = [
-    google_project_service.vpcaccess,
-    google_project_service.compute
-  ]
-}
-
-
 # -- Cloud Run Jobs --------------
 
 # RSS Collector Job
@@ -318,7 +283,7 @@ resource "google_cloud_run_v2_job" "rss_collector" {
 
         env {
           name  = "DB_HOST"
-          value = google_sql_database_instance.main.private_ip_address
+          value = "/cloudsql/${var.project_id}:${var.region}:semicon-survey-db"
         }
         env {
           name  = "DB_NAME"
@@ -354,11 +319,6 @@ resource "google_cloud_run_v2_job" "rss_collector" {
           }
         }
       }
-
-      vpc_access {
-        connector = google_vpc_access_connector.connector.id
-        egress    = "PRIVATE_RANGES_ONLY"
-      }
     }
   }
 
@@ -369,7 +329,6 @@ resource "google_cloud_run_v2_job" "rss_collector" {
   }
 
   depends_on = [
-    google_vpc_access_connector.connector,
     google_sql_database_instance.main
   ]
 }
@@ -390,7 +349,7 @@ resource "google_cloud_run_v2_job" "metadata_generator" {
 
         env {
           name  = "DB_HOST"
-          value = google_sql_database_instance.main.private_ip_address
+          value = "/cloudsql/${var.project_id}:${var.region}:semicon-survey-db"
         }
         env {
           name  = "DB_NAME"
@@ -426,11 +385,6 @@ resource "google_cloud_run_v2_job" "metadata_generator" {
           }
         }
       }
-
-      vpc_access {
-        connector = google_vpc_access_connector.connector.id
-        egress    = "PRIVATE_RANGES_ONLY"
-      }
     }
   }
 
@@ -441,7 +395,6 @@ resource "google_cloud_run_v2_job" "metadata_generator" {
   }
 
   depends_on = [
-    google_vpc_access_connector.connector,
     google_sql_database_instance.main
   ]
 }
@@ -449,11 +402,11 @@ resource "google_cloud_run_v2_job" "metadata_generator" {
 
 # -- Cloud Scheduler（定期実行トリガー） --------------
 
-# RSS Collectorジョブ用スケジューラ（6時間おき: 0時、6時、12時、18時）
+# RSS Collectorジョブ用スケジューラ
 resource "google_cloud_scheduler_job" "rss_collector" {
   name             = "rss-collector-trigger"
   description      = "Trigger RSS Collector job every 6 hours"
-  schedule         = "0 5,23 * * *"
+  schedule         = "0 5 * * *"
   time_zone        = "Asia/Tokyo"
   attempt_deadline = "1800s"
 
@@ -476,11 +429,11 @@ resource "google_cloud_scheduler_job" "rss_collector" {
   ]
 }
 
-# Metadata Generatorジョブ用スケジューラ（6時間おき、RSS収集の1時間後）
+# Metadata Generatorジョブ用スケジューラ
 resource "google_cloud_scheduler_job" "metadata_generator" {
   name             = "metadata-generator-trigger"
   description      = "Trigger Metadata Generator job every 6 hours (1 hour after RSS collection)"
-  schedule         = "0 4,22 * * *"
+  schedule         = "0 6 * * *"
   time_zone        = "Asia/Tokyo"
   attempt_deadline = "1800s"
 

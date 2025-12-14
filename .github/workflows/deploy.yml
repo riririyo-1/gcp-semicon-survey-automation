@@ -46,6 +46,7 @@ jobs:
               - '.github/workflows/deploy.yml'
             infra:
               - 'infra/**'
+              - 'jobs/**'
               - '.github/workflows/deploy.yml'
 
   # -- RSS Collector ビルド --------------
@@ -151,98 +152,12 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/frontend:latest
 
   # -- RSS Collector デプロイ --------------
-  deploy-rss-collector:
-    name: Deploy RSS Collector
-    runs-on: ubuntu-latest
-    needs: [detect-changes, build-rss-collector]
-    if: needs.detect-changes.outputs.rss-collector == 'true'
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy to Cloud Run Job
-        run: |
-          gcloud run jobs update rss-collector \
-            --image ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
-            --region ${{ env.REGION }} \
-            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --set-secrets DB_PASSWORD=db-password:latest \
-            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
-            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
-            --set-env-vars DB_NAME=semicon_survey \
-            --set-env-vars DB_USER=postgres \
-            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
-            --max-retries 3 \
-            --task-timeout 1800s \
-            || gcloud run jobs create rss-collector \
-            --image ${{ env.ARTIFACT_REGISTRY }}/rss-collector:${{ github.sha }} \
-            --region ${{ env.REGION }} \
-            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --set-secrets DB_PASSWORD=db-password:latest \
-            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
-            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
-            --set-env-vars DB_NAME=semicon_survey \
-            --set-env-vars DB_USER=postgres \
-            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
-            --max-retries 3 \
-            --task-timeout 1800s
+  # Note: Job deployment is managed by Terraform (deploy-infra job)
+  # This job only handles image building
 
   # -- Metadata Generator デプロイ --------------
-  deploy-metadata-generator:
-    name: Deploy Metadata Generator
-    runs-on: ubuntu-latest
-    needs: [detect-changes, build-metadata-generator]
-    if: needs.detect-changes.outputs.metadata-generator == 'true'
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy to Cloud Run Job
-        run: |
-          gcloud run jobs update metadata-generator \
-            --image ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }} \
-            --region ${{ env.REGION }} \
-            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --set-secrets DB_PASSWORD=db-password:latest \
-            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
-            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
-            --set-env-vars DB_NAME=semicon_survey \
-            --set-env-vars DB_USER=postgres \
-            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
-            --max-retries 3 \
-            --task-timeout 3600s \
-            || gcloud run jobs create metadata-generator \
-            --image ${{ env.ARTIFACT_REGISTRY }}/metadata-generator:${{ github.sha }} \
-            --region ${{ env.REGION }} \
-            --service-account cloudrun-app@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-            --set-secrets DB_PASSWORD=db-password:latest \
-            --set-secrets OPENAI_API_KEY=openai-api-key:latest \
-            --set-env-vars DB_HOST=${{ secrets.DB_HOST }} \
-            --set-env-vars DB_NAME=semicon_survey \
-            --set-env-vars DB_USER=postgres \
-            --add-cloudsql-instances ${{ env.PROJECT_ID }}:${{ env.REGION }}:semicon-survey-db \
-            --max-retries 3 \
-            --task-timeout 3600s
+  # Note: Job deployment is managed by Terraform (deploy-infra job)
+  # This job only handles image building
 
   # -- Frontend デプロイ --------------
   deploy-frontend:
@@ -329,14 +244,7 @@ jobs:
   deployment-summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs:
-      [
-        detect-changes,
-        deploy-rss-collector,
-        deploy-metadata-generator,
-        deploy-frontend,
-        deploy-infra,
-      ]
+    needs: [detect-changes, deploy-frontend, deploy-infra]
     if: always()
 
     steps:
@@ -353,8 +261,8 @@ jobs:
           echo "  Infrastructure: ${{ needs.detect-changes.outputs.infra }}"
           echo ""
           echo "Deployment Status:"
-          echo "  RSS Collector: ${{ needs.deploy-rss-collector.result }}"
-          echo "  Metadata Generator: ${{ needs.deploy-metadata-generator.result }}"
           echo "  Frontend: ${{ needs.deploy-frontend.result }}"
-          echo "  Infrastructure: ${{ needs.deploy-infra.result }}"
+          echo "  Infrastructure (including Jobs): ${{ needs.deploy-infra.result }}"
+          echo ""
+          echo "Note: Cloud Run Jobs are managed by Terraform"
           echo "============================================"

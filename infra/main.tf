@@ -318,6 +318,18 @@ resource "google_cloud_run_v2_job" "rss_collector" {
             memory = "1Gi"
           }
         }
+
+        volume_mounts {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
+      }
+
+      volumes {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = [google_sql_database_instance.main.connection_name]
+        }
       }
     }
   }
@@ -384,6 +396,18 @@ resource "google_cloud_run_v2_job" "metadata_generator" {
             memory = "2Gi"
           }
         }
+
+        volume_mounts {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
+      }
+
+      volumes {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = [google_sql_database_instance.main.connection_name]
+        }
       }
     }
   }
@@ -411,7 +435,7 @@ resource "google_cloud_scheduler_job" "rss_collector" {
   attempt_deadline = "1800s"
 
   retry_config {
-    retry_count = 3
+    retry_count = 1
   }
 
   http_target {
@@ -438,7 +462,7 @@ resource "google_cloud_scheduler_job" "metadata_generator" {
   attempt_deadline = "1800s"
 
   retry_config {
-    retry_count = 3
+    retry_count = 1
   }
 
   http_target {

@@ -68,8 +68,8 @@ export function SearchHeader({ sources }: SearchHeaderProps) {
     <div className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-white/20 dark:border-white/10 shadow-sm transition-colors">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col gap-4">
-          {/* Top Row: Search Bar */}
-          <div className="flex gap-2">
+          {/* Search Bar and Button - スマホでは縦、PCでは横 */}
+          <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-grow">
               <input
                 type="text"
@@ -98,14 +98,14 @@ export function SearchHeader({ sources }: SearchHeaderProps) {
             </div>
             <button
               onClick={handleSearch}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <span>{t("filter.search") || "Search"}</span>
             </button>
           </div>
 
-          {/* Bottom Row: Filters */}
-          <div className="flex flex-wrap gap-3 items-center">
+          {/* Filters - 日付と出典を横並び */}
+          <div className="flex gap-3 items-center">
             {/* Date Filter */}
             <input
               type="date"
@@ -114,7 +114,7 @@ export function SearchHeader({ sources }: SearchHeaderProps) {
                 setSelectedDate(e.target.value);
                 applyFilters({ date: e.target.value });
               }}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
               aria-label="Filter by date"
             />
 
@@ -125,7 +125,7 @@ export function SearchHeader({ sources }: SearchHeaderProps) {
                 setSelectedSource(e.target.value);
                 applyFilters({ source: e.target.value });
               }}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm max-w-[150px] text-gray-900 dark:text-gray-100"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
               aria-label="Filter by source"
             >
               <option value="">{t("filter.Sources") || "All Sources"}</option>

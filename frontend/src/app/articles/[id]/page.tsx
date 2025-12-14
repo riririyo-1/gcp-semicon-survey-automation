@@ -83,22 +83,10 @@ export default async function ArticlePage(props: Props) {
               {article.title}
             </h1>
 
-            {/* Categories & Tags */}
-            {(article.major_category ||
-              article.minor_category ||
-              (article.tags && article.tags.length > 0)) && (
+            {/* Tags */}
+            {article.tags && article.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-8">
-                {article.major_category && (
-                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
-                    {article.major_category}
-                  </span>
-                )}
-                {article.minor_category && (
-                  <span className="px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
-                    {article.minor_category}
-                  </span>
-                )}
-                {article.tags?.map((tag) => (
+                {article.tags.map((tag) => (
                   <span
                     key={tag}
                     className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm"

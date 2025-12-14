@@ -22,12 +22,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
   const [selectedDate, setSelectedDate] = useState(
     searchParams.get("date") || ""
   );
-  const [selectedMajorCategory, setSelectedMajorCategory] = useState(
-    searchParams.get("major_category") || ""
-  );
-  const [selectedMinorCategory, setSelectedMinorCategory] = useState(
-    searchParams.get("minor_category") || ""
-  );
 
   // Update local state when URL params change
   useEffect(() => {
@@ -35,8 +29,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
     setSelectedSource(searchParams.get("source") || "");
     setSelectedTag(searchParams.get("tag") || "");
     setSelectedDate(searchParams.get("date") || "");
-    setSelectedMajorCategory(searchParams.get("major_category") || "");
-    setSelectedMinorCategory(searchParams.get("minor_category") || "");
   }, [searchParams]);
 
   const applyFilters = (
@@ -45,8 +37,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
       source: string;
       tag: string;
       date: string;
-      major_category: string;
-      minor_category: string;
     }>
   ) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -57,14 +47,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
       source: updates.source !== undefined ? updates.source : selectedSource,
       tag: updates.tag !== undefined ? updates.tag : selectedTag,
       date: updates.date !== undefined ? updates.date : selectedDate,
-      major_category:
-        updates.major_category !== undefined
-          ? updates.major_category
-          : selectedMajorCategory,
-      minor_category:
-        updates.minor_category !== undefined
-          ? updates.minor_category
-          : selectedMinorCategory,
     };
 
     if (newState.q) params.set("q", newState.q);
@@ -75,12 +57,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
     else params.delete("tag");
     if (newState.date) params.set("date", newState.date);
     else params.delete("date");
-    if (newState.major_category)
-      params.set("major_category", newState.major_category);
-    else params.delete("major_category");
-    if (newState.minor_category)
-      params.set("minor_category", newState.minor_category);
-    else params.delete("minor_category");
 
     router.push(`/?${params.toString()}`);
   };
@@ -183,32 +159,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
                   {tag}
                 </option>
               ))}
-            </select>
-
-            {/* Major Category (Placeholder) */}
-            <select
-              value={selectedMajorCategory}
-              onChange={(e) => {
-                setSelectedMajorCategory(e.target.value);
-                applyFilters({ major_category: e.target.value });
-              }}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm max-w-[150px] text-gray-900 dark:text-gray-100"
-              aria-label="Filter by major category"
-            >
-              <option value="">{t("filter.majorCategory")}</option>
-            </select>
-
-            {/* Minor Category (Placeholder) */}
-            <select
-              value={selectedMinorCategory}
-              onChange={(e) => {
-                setSelectedMinorCategory(e.target.value);
-                applyFilters({ minor_category: e.target.value });
-              }}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm max-w-[150px] text-gray-900 dark:text-gray-100"
-              aria-label="Filter by minor category"
-            >
-              <option value="">{t("filter.minorCategory")}</option>
             </select>
           </div>
         </div>

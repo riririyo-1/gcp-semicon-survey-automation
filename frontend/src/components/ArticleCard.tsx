@@ -89,20 +89,6 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
       {/* Content Section */}
       <div className="p-4 flex flex-col flex-grow">
-        {/* Categories */}
-        <div className="flex gap-2 mb-2">
-          {article.major_category && (
-            <span className="px-2 py-0.5 text-[10px] font-medium border border-gray-300 dark:border-gray-600 rounded-full text-gray-600 dark:text-gray-300">
-              {article.major_category}
-            </span>
-          )}
-          {article.minor_category && (
-            <span className="px-2 py-0.5 text-[10px] font-medium border border-gray-300 dark:border-gray-600 rounded-full text-gray-600 dark:text-gray-300">
-              {article.minor_category}
-            </span>
-          )}
-        </div>
-
         {/* Title */}
         <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {article.title}

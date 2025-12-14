@@ -6,7 +6,6 @@ import { Article } from "@/types/article";
 import {
   getArticles,
   getSources,
-  getTags,
 } from "@/repositories/articleRepository";
 
 // 動的レンダリングを強制
@@ -26,22 +25,23 @@ export default async function Home(props: PageProps) {
     typeof searchParams.source === "string" ? searchParams.source : undefined;
   const tag =
     typeof searchParams.tag === "string" ? searchParams.tag : undefined;
+  const q =
+    typeof searchParams.q === "string" ? searchParams.q : undefined;
+  const date =
+    typeof searchParams.date === "string" ? searchParams.date : undefined;
 
   // データ取得（初回100件）
   let articles: Article[] = [];
   let sources: string[] = [];
-  let tags: string[] = [];
   let hasError = false;
 
   try {
     const results = await Promise.all([
-      getArticles(source, tag, 100, 0),
+      getArticles(source, tag, q, date, 100, 0),
       getSources(),
-      getTags(),
     ]);
     articles = results[0];
     sources = results[1];
-    tags = results[2];
   } catch (error) {
     console.error("Failed to load data:", error);
     hasError = true;
@@ -53,7 +53,7 @@ export default async function Home(props: PageProps) {
       <PageHeader />
 
       {/* Search Header (Sticky) */}
-      <SearchHeader sources={sources} tags={tags} />
+      <SearchHeader sources={sources} />
 
       {/* メインコンテンツ */}
       <main className="flex-grow flex flex-col items-center">
@@ -67,12 +67,16 @@ export default async function Home(props: PageProps) {
                 {articles.length}件の記事を表示中
                 {source && ` （出典: ${source}）`}
                 {tag && ` （タグ: ${tag}）`}
+                {q && ` （検索: ${q}）`}
+                {date && ` （日付: ${date}）`}
               </div>
 
               <InfiniteScrollList
                 initialArticles={articles}
                 source={source}
                 tag={tag}
+                searchQuery={q}
+                date={date}
               />
             </>
           )}

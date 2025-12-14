@@ -10,6 +10,8 @@ interface InfiniteScrollListProps {
   initialArticles: Article[];
   source?: string;
   tag?: string;
+  searchQuery?: string;
+  date?: string;
 }
 
 // -- InfiniteScrollList --------------
@@ -17,6 +19,8 @@ export function InfiniteScrollList({
   initialArticles,
   source,
   tag,
+  searchQuery,
+  date,
 }: InfiniteScrollListProps) {
   const { t } = useTranslation();
   const [articles, setArticles] = useState<Article[]>(initialArticles);
@@ -43,6 +47,8 @@ export function InfiniteScrollList({
 
       if (source) params.append("source", source);
       if (tag) params.append("tag", tag);
+      if (searchQuery) params.append("q", searchQuery);
+      if (date) params.append("date", date);
 
       const response = await fetch(`/api/articles?${params}`);
       const data = await response.json();
@@ -60,7 +66,7 @@ export function InfiniteScrollList({
     } finally {
       setIsLoading(false);
     }
-  }, [offset, isLoading, hasMore, source, tag]);
+  }, [offset, isLoading, hasMore, source, tag, searchQuery, date]);
 
   const { sentinelRef } = useInfiniteScroll({
     onLoadMore: loadMore,

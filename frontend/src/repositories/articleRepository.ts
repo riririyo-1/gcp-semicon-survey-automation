@@ -5,6 +5,8 @@ import { Article } from "@/types/article";
 export async function getArticles(
   source?: string,
   tag?: string,
+  searchQuery?: string,
+  date?: string,
   limit: number = 100,
   offset: number = 0
 ): Promise<Article[]> {
@@ -24,8 +26,18 @@ export async function getArticles(
     }
 
     if (tag) {
-      params.push(tag);
-      query += ` AND $${params.length} = ANY(tags)`;
+      params.push(`%${tag}%`);
+      query += ` AND EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE t ILIKE $${params.length})`;
+    }
+
+    if (searchQuery) {
+      params.push(`%${searchQuery}%`);
+      query += ` AND (title ILIKE $${params.length} OR EXISTS (SELECT 1 FROM unnest(tags) AS t WHERE t ILIKE $${params.length}))`;
+    }
+
+    if (date) {
+      params.push(date);
+      query += ` AND DATE(published_date) = $${params.length}`;
     }
 
     // ソート・リミット・オフセット

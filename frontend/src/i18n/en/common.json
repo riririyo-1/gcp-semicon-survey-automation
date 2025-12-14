@@ -27,7 +27,7 @@
     "Tags": "Tags",
     "clearFilters": "Clear Filters",
     "search": "Search",
-    "searchPlaceholder": "Search articles..."
+    "searchPlaceholder": "Search articles by title or tags"
   },
   "theme": {
     "light": "Light",

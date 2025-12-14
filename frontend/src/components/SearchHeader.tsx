@@ -6,10 +6,9 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 interface SearchHeaderProps {
   sources: string[];
-  tags: string[];
 }
 
-export function SearchHeader({ sources, tags }: SearchHeaderProps) {
+export function SearchHeader({ sources }: SearchHeaderProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -18,7 +17,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
   const [selectedSource, setSelectedSource] = useState(
     searchParams.get("source") || ""
   );
-  const [selectedTag, setSelectedTag] = useState(searchParams.get("tag") || "");
   const [selectedDate, setSelectedDate] = useState(
     searchParams.get("date") || ""
   );
@@ -27,7 +25,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
   useEffect(() => {
     setSearchQuery(searchParams.get("q") || "");
     setSelectedSource(searchParams.get("source") || "");
-    setSelectedTag(searchParams.get("tag") || "");
     setSelectedDate(searchParams.get("date") || "");
   }, [searchParams]);
 
@@ -35,7 +32,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
     updates: Partial<{
       q: string;
       source: string;
-      tag: string;
       date: string;
     }>
   ) => {
@@ -45,7 +41,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
     const newState = {
       q: updates.q !== undefined ? updates.q : searchQuery,
       source: updates.source !== undefined ? updates.source : selectedSource,
-      tag: updates.tag !== undefined ? updates.tag : selectedTag,
       date: updates.date !== undefined ? updates.date : selectedDate,
     };
 
@@ -53,8 +48,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
     else params.delete("q");
     if (newState.source) params.set("source", newState.source);
     else params.delete("source");
-    if (newState.tag) params.set("tag", newState.tag);
-    else params.delete("tag");
     if (newState.date) params.set("date", newState.date);
     else params.delete("date");
 
@@ -81,7 +74,7 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
               <input
                 type="text"
                 placeholder={
-                  t("filter.searchPlaceholder") || "Search articles..."
+                  t("filter.searchPlaceholder") || "タイトルまたはタグで検索..."
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -139,24 +132,6 @@ export function SearchHeader({ sources, tags }: SearchHeaderProps) {
               {sources.map((source) => (
                 <option key={source} value={source}>
                   {source}
-                </option>
-              ))}
-            </select>
-
-            {/* Tag Filter */}
-            <select
-              value={selectedTag}
-              onChange={(e) => {
-                setSelectedTag(e.target.value);
-                applyFilters({ tag: e.target.value });
-              }}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm max-w-[150px] text-gray-900 dark:text-gray-100"
-              aria-label="Filter by tag"
-            >
-              <option value="">{t("filter.Tags") || "All Tags"}</option>
-              {tags.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
                 </option>
               ))}
             </select>

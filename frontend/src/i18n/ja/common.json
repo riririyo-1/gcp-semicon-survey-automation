@@ -27,7 +27,7 @@
     "Tags": "タグ",
     "clearFilters": "フィルターをクリア",
     "search": "検索",
-    "searchPlaceholder": "記事を検索"
+    "searchPlaceholder": "タイトル, タグで検索"
   },
   "theme": {
     "light": "ライト",

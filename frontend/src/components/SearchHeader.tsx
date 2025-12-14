@@ -106,17 +106,44 @@ export function SearchHeader({ sources }: SearchHeaderProps) {
 
           {/* Filters - 日付と出典を横並び */}
           <div className="flex gap-3 items-center">
-            {/* Date Filter */}
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                applyFilters({ date: e.target.value });
-              }}
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
-              aria-label="Filter by date"
-            />
+            {/* Date Filter with Reset Button */}
+            <div className="flex-1 flex gap-2 items-center">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  applyFilters({ date: e.target.value });
+                }}
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
+                aria-label="Filter by date"
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => {
+                    setSelectedDate("");
+                    applyFilters({ date: "" });
+                  }}
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  aria-label="Clear date filter"
+                  title="日付をクリア"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
 
             {/* Source Filter */}
             <select

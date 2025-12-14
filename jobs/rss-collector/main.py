@@ -7,6 +7,7 @@ import requests
 import psycopg2
 from bs4 import BeautifulSoup
 from datetime import datetime
+from dateutil import parser as dateparser
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from openai import OpenAI
@@ -97,19 +98,30 @@ def get_date(url: str) -> str | None:
             if re.fullmatch(date_pattern, article_date):
                 formatted_date = article_date
 
-            # 'YYYY-MM-DD' 形式に一致しない場合、OpenAIで変換
+            # 'YYYY-MM-DD' 形式に一致しない場合、dateutilでパース
             else:
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant."},
-                        {"role": "user", "content": f"What is the date '{article_date}' in the 'yyyy-mm-dd' format? Please answer with only the results."}
-                    ],
-                    max_tokens=50,
-                    temperature=0.5
-                )
-                formatted_date = response.choices[0].message.content.strip()
-                print(f"  日付要素をISO8601形式へ: {formatted_date}")
+                try:
+                    # dateutilで日付をパース（英語表記に対応）
+                    parsed_date = dateparser.parse(article_date, fuzzy=True)
+                    if parsed_date:
+                        formatted_date = parsed_date.strftime("%Y-%m-%d")
+                        print(f"  日付要素をISO8601形式へ: {formatted_date}")
+                    else:
+                        # dateutilでもパースできない場合のみOpenAI APIを使用
+                        response = client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {"role": "system", "content": "You are a helpful assistant."},
+                                {"role": "user", "content": f"What is the date '{article_date}' in the 'yyyy-mm-dd' format? Please answer with only the results."}
+                            ],
+                            max_tokens=50,
+                            temperature=0.5
+                        )
+                        formatted_date = response.choices[0].message.content.strip()
+                        print(f"  OpenAIで日付変換: {formatted_date}")
+                except Exception as parse_error:
+                    print(f"  日付パースエラー: {parse_error}")
+                    formatted_date = None
 
         # ISO8601形式かチェック
         if formatted_date and re.fullmatch(date_pattern, formatted_date):
@@ -122,64 +134,6 @@ def get_date(url: str) -> str | None:
     except Exception as e:
         print(f"  日付取得エラー: {e}")
         return None
-
-
-# -- 出典抽出 --------------
-def get_article_source(url: str, title: str) -> str:
-    # 1. メタタグから取得
-    source = get_source_from_meta(url)
-
-    # 2. URLからドメイン名抽出
-    if not source:
-        source = get_source_from_url(url)
-
-    # 3. AIを使って出典名を特定
-    if not source:
-        source = get_source_with_ai(title)
-
-    return source
-
-
-def get_source_from_meta(url: str) -> str | None:
-    try:
-        response = requests.get(url, verify=True, timeout=10)
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        # metaタグからサイト名を取得
-        site_name = soup.find("meta", property="og:site_name")
-        if site_name and site_name.get("content"):
-            return site_name["content"]
-    except Exception as e:
-        print(f"  メタタグ取得エラー: {e}")
-
-    return None
-
-
-def get_source_from_url(url: str) -> str:
-    parsed_url = urlparse(url)
-    domain = parsed_url.netloc
-    site_name = domain.replace("www.", "").split('.')[0].capitalize()
-    return site_name
-
-
-def get_source_with_ai(title: str) -> str:
-    try:
-        prompt = f"""次の文章の出典を1単語で出力してください:
-"{title}"
-"""
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=20,
-            temperature=0.5
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"  AI出典取得エラー: {e}")
-        return "Unknown"
 
 
 # -- トップ画像URL取得 --------------
@@ -256,17 +210,14 @@ def process_rss_feeds(sources: dict, conn):
                 # 日付取得
                 published_date = get_date(article_url)
 
-                # 出典取得
-                source = get_article_source(article_url, article_title)
-
                 # 画像URL取得
                 image_url = get_image_url(article_url)
 
-                # 記事データ作成
+                # 記事データ作成（出典はYAMLのsource_nameを使用）
                 article = {
                     "title": article_title,
                     "url": article_url,
-                    "source": source,
+                    "source": source_name,
                     "image_url": image_url,
                     "published_date": published_date
                 }

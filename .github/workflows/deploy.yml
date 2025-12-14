@@ -239,30 +239,3 @@ jobs:
         run: |
           cd infra
           terraform apply -auto-approve tfplan
-
-  # -- デプロイ完了サマリー --------------
-  deployment-summary:
-    name: Deployment Summary
-    runs-on: ubuntu-latest
-    needs: [detect-changes, deploy-frontend, deploy-infra]
-    if: always()
-
-    steps:
-      - name: Display deployment results
-        run: |
-          echo "============================================"
-          echo "  Deployment Summary"
-          echo "============================================"
-          echo ""
-          echo "Changes Detected:"
-          echo "  Frontend: ${{ needs.detect-changes.outputs.frontend }}"
-          echo "  RSS Collector: ${{ needs.detect-changes.outputs.rss-collector }}"
-          echo "  Metadata Generator: ${{ needs.detect-changes.outputs.metadata-generator }}"
-          echo "  Infrastructure: ${{ needs.detect-changes.outputs.infra }}"
-          echo ""
-          echo "Deployment Status:"
-          echo "  Frontend: ${{ needs.deploy-frontend.result }}"
-          echo "  Infrastructure (including Jobs): ${{ needs.deploy-infra.result }}"
-          echo ""
-          echo "Note: Cloud Run Jobs are managed by Terraform"
-          echo "============================================"

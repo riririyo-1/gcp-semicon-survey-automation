@@ -23,6 +23,19 @@
 2. メタデータ付与（クローリング + OpenAI API）
 3. GCP の Cloud Run Jobs と Cloud Scheduler で定期実行を実現する
 
+### システム画面
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="/images/image.png" alt="image" style="width: 100%; border: 1px solid black;">
+    </td>
+    <td width="50%">
+      <img src="/images/image2.png" alt="image" style="width: 100%; border: 1px solid black;">
+    </td>
+  </tr>
+</table>
+
 <br>
 
 ## 開発環境

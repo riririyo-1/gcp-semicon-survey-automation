@@ -21,7 +21,7 @@
 2. メタデータ付与（クローリング + OpenAI API）
 3. GCP の Cloud Run Jobs と Cloud Scheduler で定期実行を実現する
 
----
+<br>
 
 ## 開発環境
 
@@ -48,7 +48,7 @@
   - Terraform の `plan` / `apply` もワークフローに統合済み（`infra/` 変更時のみ実行）。
   - **OIDC (OpenID Connect):** サービスアカウントキー（JSON）を発行・保存せず、セキュアに GCP 認証を行う。
 
----
+<br>
 
 ## Tech Stack
 
@@ -68,7 +68,7 @@
   - **Registry:** Artifact Registry
 - **CI/CD:** GitHub Actions (OIDC 認証)
 
----
+<br>
 
 ## Architecture
 
@@ -162,7 +162,7 @@ graph TB
 ※ ★ 印のカラムは Metadata Generator ジョブで自動付与
 ※ `image_url` は RSS Collector ジョブで meta タグ（og:image）から自動取得
 
----
+<br>
 
 ## CI/CD フロー
 
@@ -213,7 +213,7 @@ graph TB
 
 ※ ワークフローファイル自体が変更された場合、全コンポーネントがデプロイされる。
 
----
+<br>
 
 ## Folder Structure
 
@@ -273,7 +273,7 @@ gcp-semicon-survey-automation/
 └── README.md
 ```
 
----
+<br>
 
 ## 構築手順
 
@@ -1062,7 +1062,7 @@ gcloud run jobs execute metadata-generator --region=${REGION}
 gcloud run services describe frontend --region=${REGION} --format="value(status.url)"
 ```
 
----
+<br>
 
 ## CI/CD による自動デプロイ
 

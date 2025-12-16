@@ -59,18 +59,21 @@ resource "google_sql_database_instance" "main" {
   region           = var.region
 
   settings {
-    tier              = "db-f1-micro"
-    availability_type = "ZONAL"
-    disk_size         = 10
-    disk_type         = "PD_SSD"
+    tier                  = "db-f1-micro"
+    availability_type     = "ZONAL"
+    disk_size             = 10
+    disk_type             = "PD_SSD"
+    disk_autoresize       = true
+    disk_autoresize_limit = 20
 
     backup_configuration {
       enabled                        = true
       start_time                     = "03:00"
       point_in_time_recovery_enabled = false
       backup_retention_settings {
-        retained_backups = 7
+        retained_backups = 1
       }
+      transaction_log_retention_days = 1
     }
 
     ip_configuration {

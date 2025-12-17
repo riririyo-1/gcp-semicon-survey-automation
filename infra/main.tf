@@ -254,6 +254,13 @@ resource "google_project_iam_member" "cloudrun_cloudsql_client" {
   member  = "serviceAccount:${google_service_account.cloudrun_app.email}"
 }
 
+# Cloud Run Invoker権限（Cloud Schedulerからのジョブ実行に必要）
+resource "google_project_iam_member" "cloudrun_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.cloudrun_app.email}"
+}
+
 # Secret Managerアクセス権限
 resource "google_secret_manager_secret_iam_member" "cloudrun_db_password_access" {
   secret_id = google_secret_manager_secret.db_password.secret_id

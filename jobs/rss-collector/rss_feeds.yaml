@@ -26,16 +26,6 @@ sources:
         category: "technology"
       - url: "https://news.mynavi.jp/rss/techplus/whitepaper"
         category: "technology"
-      - url: "https://news.mynavi.jp/rss/digital/pc"
-        category: "technology"
-      - url: "https://news.mynavi.jp/rss/digital/mobile/iphone"
-        category: "technology"
-      - url: "https://news.mynavi.jp/rss/digital/mobile/android"
-        category: "technology"
-      - url: "https://news.mynavi.jp/rss/digital/kaden"
-        category: "technology"
-      - url: "https://news.mynavi.jp/rss/digital/gadget"
-        category: "technology"
 
   "日経XTECH":
     feeds:
@@ -45,11 +35,6 @@ sources:
   "GIGAZINE":
     feeds:
       - url: "https://gigazine.net/news/rss_2.0/"
-        category: "technology"
-
-  "Semiconductor Today":
-    feeds:
-      - url: "https://www.semiconductor-today.com/rss/news.xml"
         category: "technology"
 
   # "Science Portal":
